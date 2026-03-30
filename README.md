@@ -19,3 +19,9 @@ Tools/Scripts/build-webkit --ios-device --release --use-ccache WK_USE_CCACHE=YES
 ```
 
 4. Push compiled frameworks to `/Library/Frameworks` or `$JBROOT/Library/Frameworks` (RootHide).
+
+## Caveats
+
+- JSC is not replaced. The open-source JIT implementation appears to be incompatible with physical iOS devices (not sure).
+- DOMJIT is turned off for the same reason.
+- I managed to fill in some of the missing symbols, but they don't work as expected, so some features may not function properly.
