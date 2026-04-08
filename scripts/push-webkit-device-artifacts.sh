@@ -11,7 +11,7 @@ SSH_PORT=""
 SSH_USER=""
 REMOTE_DIR="/var/root"
 KEEP_REMOTE_PACKAGE=0
-INCLUDE_JSC=0
+INCLUDE_JSC=1
 STEP_INDEX=0
 TOTAL_STEPS=3
 
@@ -57,7 +57,7 @@ usage() {
 Usage: ${SCRIPT_NAME} [--package <tar.gz-path>]
           [--ssh-target <ssh-config-host>] [--ssh-host <host>] [--ssh-port <port>]
           [--ssh-user <user>] [--remote-dir <dir>] [--keep-remote-package]
-          [--include-jsc]
+          [--exclude-jsc]
 
 Default behavior:
   If --package is not provided, use the newest:
@@ -68,8 +68,8 @@ Default SSH (iproxy style):
   --remote-dir ${REMOTE_DIR}
 
 Notes:
-  JavaScriptCore.framework is excluded on push by default.
-  Pass --include-jsc to push JavaScriptCore.framework too.
+  JavaScriptCore.framework is included on push by default.
+  Pass --exclude-jsc to switch back to mixed-mode push.
 EOF
 }
 
@@ -103,8 +103,8 @@ while [[ $# -gt 0 ]]; do
             KEEP_REMOTE_PACKAGE=1
             shift
             ;;
-        --include-jsc)
-            INCLUDE_JSC=1
+        --exclude-jsc)
+            INCLUDE_JSC=0
             shift
             ;;
         -h|--help)

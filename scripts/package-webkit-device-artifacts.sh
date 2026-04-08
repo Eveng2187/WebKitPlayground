@@ -8,7 +8,7 @@ DEFAULT_SOURCE_DIR="${ROOT_DIR}/WebKitBuild/Debug-iphoneos"
 SOURCE_DIR="${DEFAULT_SOURCE_DIR}"
 OUTPUT_TAR=""
 PUSH_TO_DEVICE=0
-INCLUDE_JSC=0
+INCLUDE_JSC=1
 SKIP_ABI_CHECK=0
 SSH_TARGET="iproxy"
 SSH_HOST=""
@@ -77,7 +77,7 @@ usage() {
     cat <<EOF
 Usage: ${SCRIPT_NAME} [--source <Debug-iphoneos-dir>] [--output <tar.gz-path>] [--push-device]
           [--ssh-target <ssh-config-host>] [--ssh-host <host>] [--ssh-port <port>]
-          [--ssh-user <user>] [--remote-dir <dir>] [--include-jsc]
+          [--ssh-user <user>] [--remote-dir <dir>] [--exclude-jsc]
           [--skip-abi-check] [--stock-jsc <path>] [--stock-webcore <path>]
 
 Default source:
@@ -90,6 +90,10 @@ Default SSH (iproxy style):
 Default gates (when JSC is excluded):
   --stock-jsc ${STOCK_JSC}
   --stock-webcore ${STOCK_WEBCORE}
+
+Notes:
+  JSC is included by default.
+  Pass --exclude-jsc to switch back to mixed-mode packaging.
 EOF
 }
 
@@ -107,8 +111,8 @@ while [[ $# -gt 0 ]]; do
             PUSH_TO_DEVICE=1
             shift
             ;;
-        --include-jsc)
-            INCLUDE_JSC=1
+        --exclude-jsc)
+            INCLUDE_JSC=0
             shift
             ;;
         --skip-abi-check)
@@ -148,7 +152,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         *)
-            echo "Unknown argument: $1" >&2
+            log_error "Unknown argument: $1"
             usage >&2
             exit 1
             ;;
@@ -435,8 +439,8 @@ if [[ "${PUSH_TO_DEVICE}" == "1" ]]; then
     if [[ -n "${SSH_USER}" ]]; then
         push_args+=("--ssh-user" "${SSH_USER}")
     fi
-    if [[ "${INCLUDE_JSC}" == "1" ]]; then
-        push_args+=("--include-jsc")
+    if [[ "${INCLUDE_JSC}" != "1" ]]; then
+        push_args+=("--exclude-jsc")
     fi
 
     zsh "${PUSH_SCRIPT}" "${push_args[@]}"
