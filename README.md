@@ -20,6 +20,31 @@ Tools/Scripts/build-webkit --ios-device --release --use-ccache WK_USE_CCACHE=YES
 
 4. Push compiled frameworks to `/Library/Frameworks` or `$JBROOT/Library/Frameworks` (RootHide).
 
+## Build parallelism (Xcode defaults)
+
+If you want to increase compile/build parallelism globally in Xcode, run:
+
+```bash
+defaults write com.apple.dt.Xcode IDEBuildOperationMaxNumberOfConcurrentCompileTasks 48
+defaults write com.apple.Xcode PBXNumberOfParallelBuildSubtasks 48
+```
+
+What they do:
+
+- `IDEBuildOperationMaxNumberOfConcurrentCompileTasks`: controls the max number of concurrent compile tasks.
+- `PBXNumberOfParallelBuildSubtasks`: controls the number of parallel PBX build subtasks in the build graph.
+
+Notes:
+
+- These are global user defaults and affect Xcode-driven builds on this machine.
+- Restart Xcode after changing these values.
+- To restore defaults:
+
+```bash
+defaults delete com.apple.dt.Xcode IDEBuildOperationMaxNumberOfConcurrentCompileTasks
+defaults delete com.apple.Xcode PBXNumberOfParallelBuildSubtasks
+```
+
 ## Caveats
 
 - JSC is not replaced. The open-source JIT implementation appears to be incompatible with physical iOS devices (not sure).
