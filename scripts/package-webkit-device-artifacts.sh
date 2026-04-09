@@ -304,6 +304,12 @@ mkdir -p "${XPC_FALLBACK_DIR}"
 while IFS= read -r -d '' top_level_xpc; do
     xpc_name="$(basename "${top_level_xpc}")"
     dst="${XPC_FALLBACK_DIR}/${xpc_name}"
+    if [[ -L "${dst}" ]]; then
+        # Replace symlink entries with real directories to avoid broken links after packaging.
+        rm -f "${dst}"
+        mv "${top_level_xpc}" "${dst}"
+        continue
+    fi
     if [[ -e "${dst}" ]]; then
         rm -rf "${top_level_xpc}"
         continue
