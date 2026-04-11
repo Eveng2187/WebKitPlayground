@@ -8,6 +8,14 @@ Build an open-source version of WebKit and replace it system-wide on iOS jailbro
 - Xcode 14.3.1 + iOS 16.5 SDK
 - Test device: iOS 16.4.1 (Dopamine)
 
+## Patch Xcode SDK
+
+If build fails with `'objc/objc-runtime.h' file not found`, run:
+
+```bash
+sudo Tools/Scripts/configure-xcode-for-embedded-development
+```
+
 ## How to use
 
 1. We need to [patch dyld](https://github.com/Lessica/Dopamine/blob/rh2.x_modify_white/BaseBin/dyldhook/src/roothider.c) to allow `DYLD_FRAMEWORK_PATH` to work on top of DSC
