@@ -4,6 +4,7 @@
 /WebKitPlayer-*
 /payload
 /samples
+/packages
 /third_party
 
 # Created by https://www.toptal.com/developers/gitignore/api/macos,python

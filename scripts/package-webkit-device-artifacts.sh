@@ -4,8 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SCRIPT_NAME="$(basename "$0")"
-DEFAULT_SOURCE_DIR="${ROOT_DIR}/WebKitBuild/Debug-iphoneos"
-SOURCE_DIR="${DEFAULT_SOURCE_DIR}"
+SOURCE_DIR="${ROOT_DIR}/WebKit"
+PRODUCT_DIR="${SOURCE_DIR}/WebKitBuild/Debug-iphoneos"
 OUTPUT_TAR=""
 PUSH_TO_DEVICE=0
 INCLUDE_JSC=1
@@ -75,13 +75,10 @@ pick_tar_bin() {
 
 usage() {
     cat <<EOF
-Usage: ${SCRIPT_NAME} [--source <Debug-iphoneos-dir>] [--output <tar.gz-path>] [--push-device]
-          [--ssh-target <ssh-config-host>] [--ssh-host <host>] [--ssh-port <port>]
-          [--ssh-user <user>] [--remote-dir <dir>] [--exclude-jsc]
-          [--skip-abi-check] [--stock-jsc <path>] [--stock-webcore <path>]
-
-Default source:
-  ${DEFAULT_SOURCE_DIR}
+Usage: ${SCRIPT_NAME} [--product <Debug-iphoneos>] [--output <tar.gz-path>]
+       [--ssh-target <ssh-config-host>] [--ssh-host <host>] [--ssh-port <port>] [--ssh-user <user>]
+       [--push-device] [--remote-dir <dir>] [--exclude-jsc] [--skip-abi-check]
+       [--stock-jsc <path>] [--stock-webcore <path>]
 
 Default SSH (iproxy style):
   --ssh-target ${SSH_TARGET}
@@ -99,8 +96,9 @@ EOF
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --source)
-            SOURCE_DIR="${2:?missing value for --source}"
+        --product)
+            PRODUCT_DIR="${2:?missing value for --product}"
+            SOURCE_DIR="$(dirname "$(dirname "${PRODUCT_DIR}")")"
             shift 2
             ;;
         --output)
@@ -159,14 +157,16 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ ! -d "${SOURCE_DIR}" ]]; then
-    log_error "Source directory does not exist: ${SOURCE_DIR}"
+if [[ ! -d "${PRODUCT_DIR}" ]]; then
+    log_error "Product directory does not exist: ${PRODUCT_DIR}"
     exit 1
 fi
 
 timestamp="$(date +%Y%m%d-%H%M%S)"
 if [[ -z "${OUTPUT_TAR}" ]]; then
-    OUTPUT_TAR="${ROOT_DIR}/webkit-device-package-${timestamp}.tar.gz"
+    OUTPUT_PKG_DIR="${ROOT_DIR}/packages"
+    mkdir -p "${OUTPUT_PKG_DIR}"
+    OUTPUT_TAR="${OUTPUT_PKG_DIR}/webkit-device-package-${timestamp}.tar.gz"
 fi
 
 TOTAL_STEPS=5
@@ -181,7 +181,7 @@ else
     log_warn "gtar not found; falling back to tar. Extended-header warnings may still appear when extracting."
 fi
 
-WORK_BASE_DIR="$(cd "$(dirname "${SOURCE_DIR}")" && pwd)"
+WORK_BASE_DIR="$(cd "$(dirname "${PRODUCT_DIR}")" && pwd)"
 WORK_DIR="$(mktemp -d "${WORK_BASE_DIR}/.webkit-device-package.XXXXXX")"
 PACKAGE_STAGE_DIR="${WORK_DIR}/package-stage"
 PAYLOAD_DIR="${PACKAGE_STAGE_DIR}/payload"
@@ -221,7 +221,7 @@ typeset -a ondemand_items=(
 
 copy_item_if_exists() {
     local item="$1"
-    local src="${SOURCE_DIR}/${item}"
+    local src="${PRODUCT_DIR}/${item}"
     local dst="${PAYLOAD_DIR}/${item}"
     if [[ -e "${src}" ]]; then
         ditto "${src}" "${dst}"
@@ -349,8 +349,8 @@ if ! command -v ldid >/dev/null 2>&1; then
     exit 1
 fi
 
-WEBKIT_PROCESS_ENTITLEMENTS="${ROOT_DIR}/WebKit/Source/WebKit/Scripts/process-entitlements.sh"
-JSC_PROCESS_ENTITLEMENTS="${ROOT_DIR}/WebKit/Source/JavaScriptCore/Scripts/process-entitlements.sh"
+WEBKIT_PROCESS_ENTITLEMENTS="${SOURCE_DIR}/Source/WebKit/Scripts/process-entitlements.sh"
+JSC_PROCESS_ENTITLEMENTS="${SOURCE_DIR}/Source/JavaScriptCore/Scripts/process-entitlements.sh"
 ENTITLEMENTS_WORK_DIR="${WORK_DIR}/entitlements"
 mkdir -p "${ENTITLEMENTS_WORK_DIR}"
 

@@ -194,12 +194,12 @@ find "${TMP_DIR}/payload" -mindepth 1 -maxdepth 1 | while IFS= read -r src; do
 done
 
 # Move dylibs into usr/lib (jailbreak path preferred), then remove duplicates from Frameworks.
-mkdir -p "${TARGET_USRLIB_DIR}"
-find "${TMP_DIR}/payload" -mindepth 1 -maxdepth 1 -type f -name "*.dylib" | while IFS= read -r dylib; do
-    base="$(basename "${dylib}")"
-    cp -f "${dylib}" "${TARGET_USRLIB_DIR}/${base}"
-    rm -f "${TARGET_FRAMEWORKS_DIR}/${base}"
-done
+# mkdir -p "${TARGET_USRLIB_DIR}"
+# find "${TMP_DIR}/payload" -mindepth 1 -maxdepth 1 -type f -name "*.dylib" | while IFS= read -r dylib; do
+#     base="$(basename "${dylib}")"
+#     cp -f "${dylib}" "${TARGET_USRLIB_DIR}/${base}"
+#     rm -f "${TARGET_FRAMEWORKS_DIR}/${base}"
+# done
 
 rm -rf "${TMP_DIR}"
 echo "Extracted to: ${TARGET_FRAMEWORKS_DIR}"

@@ -123,3 +123,227 @@ index 9a53d7b3286ca3d2fa64bc276c5e4b6e8f97bb6c..39e0961849188eff0f462fbc9dc950e5
  #endif
          g_jscConfig.useFastJITPermissions = fastJITPermissionsIsSupported;
  
+
+diff --git a/Source/WebCore/bindings/scripts/CodeGeneratorJS.pm b/Source/WebCore/bindings/scripts/CodeGeneratorJS.pm
+index 224c3018065b..671fb4d06f55 100644
+--- a/Source/WebCore/bindings/scripts/CodeGeneratorJS.pm
++++ b/Source/WebCore/bindings/scripts/CodeGeneratorJS.pm
+@@ -2068,23 +2068,6 @@ sub IsAcceleratedDOMAttribute
+     return 1;
+ }
+ 
+-sub EffectiveDOMJITAttribute
+-{
+-    my ($object) = @_;
+-
+-    return undef unless $object->extendedAttributes->{DOMJIT};
+-
+-    # Mixed-mode iOS builds pair public WebCore/WebKit sources with the stock
+-    # JavaScriptCore from the device. The stock JSC contains Apple-private
+-    # DOMJIT additions that are not present in the public headers, so exposing
+-    # public-source DOMJIT metadata makes the stock JSC execute snippet
+-    # generators against the wrong private layout and trips PAC on arm64e.
+-    # Default to the generic accessor/function path unless explicitly opted in.
+-    return undef unless $ENV{WK_ENABLE_PUBLIC_DOMJIT} && $ENV{WK_ENABLE_PUBLIC_DOMJIT} eq "1";
+-
+-    return $object->extendedAttributes->{DOMJIT};
+-}
+-
+ sub GetJSCAttributesForAttribute
+ {
+     my $interface = shift;
+@@ -2099,7 +2082,7 @@ sub GetJSCAttributesForAttribute
+     push(@specials, "JSC::PropertyAttribute::ReadOnly") if IsReadonly($attribute);
+     push(@specials, "JSC::PropertyAttribute::CustomAccessor") unless $isGlobalConstructor or IsJSBuiltin($interface, $attribute);
+     push(@specials, "JSC::PropertyAttribute::DOMAttribute") if IsAcceleratedDOMAttribute($interface, $attribute);
+-    push(@specials, "JSC::PropertyAttribute::DOMJITAttribute") if EffectiveDOMJITAttribute($attribute);
++    push(@specials, "JSC::PropertyAttribute::DOMJITAttribute") if $attribute->extendedAttributes->{DOMJIT};
+     push(@specials, "JSC::PropertyAttribute::Accessor | JSC::PropertyAttribute::Builtin") if  IsJSBuiltin($interface, $attribute);
+     return "static_cast<unsigned>(" . ((@specials > 0) ? join(" | ", @specials) : "0") . ")";
+ }
+@@ -3128,7 +3111,7 @@ sub GenerateHeader
+                 $numCachedAttributes++;
+                 push(@headerContent, "#endif\n") if $conditionalString;
+             }
+-            $hasDOMJITAttributes = 1 if EffectiveDOMJITAttribute($attribute);
++            $hasDOMJITAttributes = 1 if $attribute->extendedAttributes->{DOMJIT};
+         }
+     }
+ 
+@@ -3318,7 +3301,7 @@ sub GenerateHeader
+     GeneratePrototypeDeclaration(\@headerContent, $className, $interface) if HeaderNeedsPrototypeDeclaration($interface);
+ 
+     # CheckJSCast Snippet function.
+-    if (EffectiveDOMJITAttribute($interface)) {
++    if ($interface->extendedAttributes->{DOMJIT}) {
+         $headerIncludes{"<JavaScriptCore/Snippet.h>"} = 1;
+         push(@headerContent, "#if ENABLE(JIT)\n");
+         push(@headerContent, "Ref<JSC::Snippet> checkSubClassSnippetFor${className}();\n");
+@@ -3329,9 +3312,8 @@ sub GenerateHeader
+         $headerIncludes{"<JavaScriptCore/DOMJITGetterSetter.h>"} = 1;
+         push(@headerContent,"// DOM JIT Attributes\n\n");
+         foreach my $attribute (@{$interface->attributes}) {
+-            my $domJITAttribute = EffectiveDOMJITAttribute($attribute);
+-            next unless $domJITAttribute;
+-            assert("Only DOMJIT=Getter is supported for attributes") unless $codeGenerator->ExtendedAttributeContains($domJITAttribute, "Getter");
++            next unless $attribute->extendedAttributes->{DOMJIT};
++            assert("Only DOMJIT=Getter is supported for attributes") unless $codeGenerator->ExtendedAttributeContains($attribute->extendedAttributes->{DOMJIT}, "Getter");
+ 
+             my $interfaceName = $interface->type->name;
+             my $className = $interfaceName . $codeGenerator->WK_ucfirst($attribute->name);
+@@ -3430,7 +3412,7 @@ sub GeneratePropertiesHashTable
+         my $special = GetJSCAttributesForAttribute($interface, $attribute);
+         push(@$hashSpecials, $special);
+ 
+-        if (EffectiveDOMJITAttribute($attribute)) {
++        if ($attribute->extendedAttributes->{DOMJIT}) {
+             push(@$hashValue1, "&DOMJITAttributeFor" . $interface->type->name . $codeGenerator->WK_ucfirst($attribute->name));
+         } else {
+             my $getter = GetAttributeGetterName($interface, $className, $attribute);
+@@ -3482,7 +3464,7 @@ sub GeneratePropertiesHashTable
+ 
+         my $functionLength = GetFunctionLength($operation);
+ 
+-        if (EffectiveDOMJITAttribute($operation)) {
++        if ($operation->extendedAttributes->{DOMJIT}) {
+             push(@$hashValue2, "&DOMJITSignatureFor" . $interface->type->name . $codeGenerator->WK_ucfirst($operation->name));
+         } else {
+             push(@$hashValue2, $functionLength);
+@@ -4347,7 +4329,7 @@ sub GenerateImplementation
+             push(@implContent, "#if ${conditionalString}\n") if $conditionalString;
+             my $functionName = GetFunctionName($interface, $className, $operation);
+             push(@implContent, "static JSC_DECLARE_HOST_FUNCTION(${functionName});\n");
+-            if (EffectiveDOMJITAttribute($operation)) {
++            if ($operation->extendedAttributes->{DOMJIT}) {
+                 $implIncludes{"DOMJITIDLType.h"} = 1;
+                 my $nameOfFunctionWithoutTypeCheck = $codeGenerator->WK_lcfirst($functionName) . "WithoutTypeCheck";
+                 my $functionSignature = "extern \"C\" { static JSC_DECLARE_JIT_OPERATION_WITHOUT_WTF_INTERNAL(${nameOfFunctionWithoutTypeCheck}, JSC::EncodedJSValue, (JSC::JSGlobalObject*, $className*";
+@@ -4382,14 +4364,13 @@ sub GenerateImplementation
+ 
+     if ($numOperations > 0) {
+         foreach my $operation (@{$interface->operations}) {
+-            my $domJITAttribute = EffectiveDOMJITAttribute($operation);
+-            next unless $domJITAttribute;
++            next unless $operation->extendedAttributes->{DOMJIT};
+             $implIncludes{"DOMJITIDLTypeFilter.h"} = 1;
+             $implIncludes{"DOMJITAbstractHeapRepository.h"} = 1;
+ 
+             my $isOverloaded = $operation->{overloads} && @{$operation->{overloads}} > 1;
+             die "Overloads is not supported in DOMJIT" if $isOverloaded;
+-            die "Currently ReadDOM value is only allowed" unless $codeGenerator->ExtendedAttributeContains($domJITAttribute, "ReadDOM");
++            die "Currently ReadDOM value is only allowed" unless $codeGenerator->ExtendedAttributeContains($operation->extendedAttributes->{DOMJIT}, "ReadDOM");
+ 
+             my $functionName = GetFunctionName($interface, $className, $operation);
+             my $nameOfFunctionWithoutTypeCheck = $codeGenerator->WK_lcfirst($functionName) . "WithoutTypeCheck";
+@@ -4414,9 +4395,8 @@ sub GenerateImplementation
+ 
+     if ($numAttributes > 0 || NeedsConstructorProperty($interface)) {
+         foreach my $attribute (@{$interface->attributes}) {
+-            my $domJITAttribute = EffectiveDOMJITAttribute($attribute);
+-            next unless $domJITAttribute;
+-            assert("Only DOMJIT=Getter is supported for attributes") unless $codeGenerator->ExtendedAttributeContains($domJITAttribute, "Getter");
++            next unless $attribute->extendedAttributes->{DOMJIT};
++            assert("Only DOMJIT=Getter is supported for attributes") unless $codeGenerator->ExtendedAttributeContains($attribute->extendedAttributes->{DOMJIT}, "Getter");
+ 
+             my $conditionalString = $codeGenerator->GenerateConditionalString($attribute);
+             push(@implContent, "#if ${conditionalString}\n\n") if $conditionalString;
+@@ -4425,7 +4405,7 @@ sub GenerateImplementation
+             my $domJITClassName = $generatorName . "Attribute";
+             my $getter = GetAttributeGetterName($interface, $className, $attribute);
+             my $resultType = "JSC::SpecBytecodeTop";
+-            if (EffectiveDOMJITAttribute($attribute)) {
++            if ($attribute->extendedAttributes->{DOMJIT}) {
+                 $resultType = GetResultTypeFilter($interface, $attribute->type);
+             }
+             push(@implContent, "static const JSC::DOMJIT::GetterSetter DOMJITAttributeFor${generatorName} {\n");
+@@ -4501,11 +4481,11 @@ sub GenerateImplementation
+             push(@specials, "JSC::PropertyAttribute::DontDelete") if IsLegacyUnforgeable($interface, $attribute);
+             push(@specials, "JSC::PropertyAttribute::ReadOnly") if IsReadonly($attribute);
+             push(@specials, "JSC::PropertyAttribute::DOMAttribute") if IsAcceleratedDOMAttribute($interface, $attribute);
+-            push(@specials, "JSC::PropertyAttribute::DOMJITAttribute") if EffectiveDOMJITAttribute($attribute);
++            push(@specials, "JSC::PropertyAttribute::DOMJITAttribute") if $attribute->extendedAttributes->{DOMJIT};
+             my $special = "static_cast<unsigned>(" . ((@specials > 0) ? join(" | ", @specials) : "0") . ")";
+             push(@hashSpecials, $special);
+ 
+-            if (EffectiveDOMJITAttribute($attribute)) {
++            if ($attribute->extendedAttributes->{DOMJIT}) {
+                 push(@hashValue1, "&DOMJITAttributeFor" . $interface->type->name . $codeGenerator->WK_ucfirst($attribute->name));
+             } else {
+                 my $getter = GetAttributeGetterName($interface, $className, $attribute);
+@@ -4538,7 +4518,7 @@ sub GenerateImplementation
+             push(@hashValue1, $functionName);
+ 
+             my $functionLength = GetFunctionLength($operation);
+-            if (EffectiveDOMJITAttribute($operation)) {
++            if ($operation->extendedAttributes->{DOMJIT}) {
+                 push(@hashValue2, "DOMJITFunctionFor" . $interface->type->name . $codeGenerator->WK_ucfirst($operation->name));
+             } else {
+                 push(@hashValue2, $functionLength);
+@@ -4716,7 +4696,7 @@ sub GenerateImplementation
+     } else {
+         push(@implContent, "nullptr");
+     }
+-    if (EffectiveDOMJITAttribute($interface)) {
++    if ($interface->extendedAttributes->{DOMJIT}) {
+         push(@implContent, "\n");
+         push(@implContent, "#if ENABLE(JIT)\n");
+         push(@implContent, ", &checkSubClassSnippetFor${className}\n");
+@@ -5823,7 +5803,7 @@ sub GenerateOperationDefinition
+     }
+ 
+ 
+-    if (EffectiveDOMJITAttribute($operation)) {
++    if ($operation->extendedAttributes->{DOMJIT}) {
+         if ($conditional) {
+             my $conditionalString = $codeGenerator->GenerateConditionalStringFromAttributeValue($conditional);
+             push(@$outputArray, "#if ${conditionalString}\n");
+@@ -8126,8 +8106,8 @@ sub ComputeFunctionSpecial
+     } else {
+         push(@specials, "JSC::PropertyAttribute::Function");
+     }
+-    if (EffectiveDOMJITAttribute($operation)) {
+-        push(@specials, "JSC::PropertyAttribute::DOMJITFunction") if EffectiveDOMJITAttribute($operation);
++    if ($operation->extendedAttributes->{DOMJIT}) {
++        push(@specials, "JSC::PropertyAttribute::DOMJITFunction") if $operation->extendedAttributes->{DOMJIT};
+     }
+     return "static_cast<unsigned>(" . ((@specials > 0) ? join(" | ", @specials) : "0") . ")";
+ }
+
+diff --git a/Source/JavaScriptCore/runtime/JSDateMath.cpp b/Source/JavaScriptCore/runtime/JSDateMath.cpp
+index d9d1c42d1746..7b59ce282748 100644
+--- a/Source/JavaScriptCore/runtime/JSDateMath.cpp
++++ b/Source/JavaScriptCore/runtime/JSDateMath.cpp
+@@ -79,7 +79,7 @@
+ #include <wtf/unicode/CharacterNames.h>
+ #include <wtf/unicode/icu/ICUHelpers.h>
+ 
+-#if U_ICU_VERSION_MAJOR_NUM >= 69 || (U_ICU_VERSION_MAJOR_NUM == 68 && USE(APPLE_INTERNAL_SDK))
++#if PLATFORM(IOS_FAMILY) || U_ICU_VERSION_MAJOR_NUM >= 69 || (U_ICU_VERSION_MAJOR_NUM == 68 && USE(APPLE_INTERNAL_SDK))
+ #define HAVE_ICU_C_TIMEZONE_API 1
+ #ifdef U_HIDE_DRAFT_API
+ #undef U_HIDE_DRAFT_API
+@@ -98,6 +98,24 @@
+ #define U_SHOW_CPLUSPLUS_API 0
+ #endif
+ 
++#if HAVE(ICU_C_TIMEZONE_API) && PLATFORM(IOS_FAMILY) && !defined(UCAL_TZ_LOCAL_FORMER)
++enum UTimeZoneLocalOption {
++    UCAL_TZ_LOCAL_FORMER = 0,
++    UCAL_TZ_LOCAL_LATTER = 1,
++    UCAL_TZ_LOCAL_STANDARD_FORMER = 2,
++    UCAL_TZ_LOCAL_STANDARD_LATTER = 3
++};
++typedef enum UTimeZoneLocalOption UTimeZoneLocalOption;
++
++U_CAPI void U_EXPORT2
++ucal_getTimeZoneOffsetFromLocal(const UCalendar* cal,
++    UTimeZoneLocalOption nonExistingTimeOpt,
++    UTimeZoneLocalOption duplicatedTimeOpt,
++    int32_t* rawOffset,
++    int32_t* dstOffset,
++    UErrorCode* status);
++#endif
++
+ namespace JSC {
+ 
+ #if PLATFORM(COCOA)
