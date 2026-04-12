@@ -68,6 +68,16 @@ Tools/Scripts/build-webkit --ios-device --release --use-ccache WK_USE_CCACHE=YES
 
 4. Push compiled frameworks to `/Library/Frameworks` or `$JBROOT/Library/Frameworks` (RootHide).
 
+## Verify Replacement
+
+Use `User-Agent` to verify that replaced WebKit is active:
+
+1. Build/apply the patch and deploy frameworks to target device.
+2. Open Safari (or any `WKWebView` host app) and visit a UA echo page (for example: `https://httpbin.org/user-agent`).
+3. Confirm the returned `User-Agent` contains `WKDebugUA/1.0`.
+
+If `WKDebugUA/1.0` is present, traffic is using the replaced WebKit build from this repo.
+
 ## Troubleshooting
 
 ### iOS 16.1 required cherry-picks
