@@ -145,37 +145,6 @@ index d9d1c42d1746..7b59ce282748 100644
  namespace JSC {
  
  #if PLATFORM(COCOA)
-diff --git a/Source/JavaScriptCore/runtime/JSGlobalObject.h b/Source/JavaScriptCore/runtime/JSGlobalObject.h
-index 20559940bb03..4d32d4625a1f 100644
---- a/Source/JavaScriptCore/runtime/JSGlobalObject.h
-+++ b/Source/JavaScriptCore/runtime/JSGlobalObject.h
-@@ -57,7 +57,13 @@
- #if USE(APPLE_INTERNAL_SDK)
- #include <WebKitAdditions/JSGlobalObjectAdditions.h>
- #else
-+// Keep JSGlobalObject instance layout compatible with stock iOS JavaScriptCore
-+// when mixing custom WebCore/WebKit with system JavaScriptCore at runtime.
-+#if PLATFORM(IOS_FAMILY)
-+#define JS_GLOBAL_OBJECT_ADDITIONS_1 void* m_externalSDKABICompatPadding { nullptr }
-+#else
- #define JS_GLOBAL_OBJECT_ADDITIONS_1
-+#endif
- #define JS_GLOBAL_OBJECT_ADDITIONS_2
- #define JS_GLOBAL_OBJECT_ADDITIONS_3
- #define JS_GLOBAL_OBJECT_ADDITIONS_4
-diff --git a/Source/WebCore/Configurations/WebCore.xcconfig b/Source/WebCore/Configurations/WebCore.xcconfig
-index 93ec77d9dd4c..0a5af1888f3a 100644
---- a/Source/WebCore/Configurations/WebCore.xcconfig
-+++ b/Source/WebCore/Configurations/WebCore.xcconfig
-@@ -63,7 +63,7 @@ FRAMEWORK_SEARCH_PATHS[sdk=macosx*] = $(WK_QUOTED_OVERRIDE_FRAMEWORKS_DIR);
- 
- SYSTEM_FRAMEWORK_SEARCH_PATHS = $(inherited) $(SDK_DIR)$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks $(SDK_DIR)$(SYSTEM_LIBRARY_DIR)/Frameworks
- 
--HEADER_SEARCH_PATHS = PAL ForwardingHeaders /usr/include/libxslt /usr/include/libxml2 "$(BUILT_PRODUCTS_DIR)/DerivedSources/WebCore" "$(BUILT_PRODUCTS_DIR)$(WK_LIBRARY_HEADERS_FOLDER_PATH)" $(WEBKITADDITIONS_HEADER_SEARCH_PATHS) $(ANGLE_HEADER_SEARCH_PATHS) $(LIBWEBRTC_HEADER_SEARCH_PATHS) $(HEADER_SEARCH_PATHS) $(SRCROOT);
-+HEADER_SEARCH_PATHS = $(SRCROOT)/../../../scripts/abi-shims/include PAL ForwardingHeaders /usr/include/libxslt /usr/include/libxml2 "$(BUILT_PRODUCTS_DIR)/DerivedSources/WebCore" "$(BUILT_PRODUCTS_DIR)$(WK_LIBRARY_HEADERS_FOLDER_PATH)" $(WEBKITADDITIONS_HEADER_SEARCH_PATHS) $(ANGLE_HEADER_SEARCH_PATHS) $(LIBWEBRTC_HEADER_SEARCH_PATHS) $(HEADER_SEARCH_PATHS) $(SRCROOT);
- SYSTEM_HEADER_SEARCH_PATHS = $(PROJECT_DIR)/PAL/ThirdParty/libavif/include $(SDK_DIR)$(WK_ALTERNATE_WEBKIT_SDK_PATH)$(WK_LIBRARY_HEADERS_FOLDER_PATH) $(inherited);
- LIBRARY_SEARCH_PATHS = "$(SDK_DIR)$(WEBCORE_LIBRARY_DIR)" $(SDK_DIR)$(WK_LIBRARY_INSTALL_PATH) $(inherited);
- 
 diff --git a/Source/WebCore/SourcesCocoa.txt b/Source/WebCore/SourcesCocoa.txt
 index 30f84fdb7faf..ace3bbd5c222 100644
 --- a/Source/WebCore/SourcesCocoa.txt

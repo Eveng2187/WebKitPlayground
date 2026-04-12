@@ -2,11 +2,10 @@
 
 Build an open-source version of WebKit and replace it system-wide on iOS jailbroken devices.
 
-## Requirements
-
-- WebKit source code: [releases/Apple/Safari-16.4-iOS-16.4.1](https://github.com/WebKit/WebKit/releases/tag/releases/Apple/Safari-16.4-iOS-16.4.1)
-- Xcode 14.3.1 + iOS 16.4 SDK
-- Test device: iOS 16.4.1 (Dopamine)
+- [x] Mobile Safari
+- [x] 3rd-party browsers (e.g. Chrome, Firefox, Edge)
+- [x] `WKWebView`
+- [x] `UIWebView` (i.e. `WebKitLegacy`)
 
 ## Compatibility
 
@@ -16,21 +15,41 @@ Build an open-source version of WebKit and replace it system-wide on iOS jailbro
         <th>Tested on iOS</th>
         <th>Xcode Version</th>
         <th>iOS SDK Version</th>
+        <th>Patch File</th>
     </tr>
     <tr>
-        <td>releases/Apple/Safari-16.3-iOS-16.3.1</td>
-        <td>16.3.1</td>
-        <td>14.2</td>
+        <td rowspan="3"><a href="https://github.com/WebKit/WebKit/releases/tag/releases/Apple/Safari-16.1-iOS-16.1">releases/Apple/Safari-16.1-iOS-16.1</a> (cherry-picks required)</td>
+        <td>16.1</td>
+        <td rowspan="3">14.1</td>
+        <td rowspan="3">16.1</td>
+        <td rowspan="3">webkit_iOS_16.1-worktree-20260412-014749.patch</td>
+    </tr>
+    <tr>
+        <td>16.1.1</td>
+    </tr>
+    <tr>
+        <td>16.1.2</td>
+    </tr>
+    <tr>
+        <td><a href="https://github.com/WebKit/WebKit/releases/tag/releases/Apple/Safari-16.2-iOS-16.2">releases/Apple/Safari-16.2-iOS-16.2</a></td>
         <td>16.2</td>
+        <td rowspan="2">14.2</td>
+        <td rowspan="2">16.2</td>
+        <td rowspan="2">webkit_iOS_16.3.1-worktree-20260412-004539.patch</td>
     </tr>
     <tr>
-        <td>releases/Apple/Safari-16.4-iOS-16.4.1</td>
+        <td><a href="https://github.com/WebKit/WebKit/releases/tag/releases/Apple/Safari-16.3-iOS-16.3.1">releases/Apple/Safari-16.3-iOS-16.3.1</a></td>
+        <td>16.3.1</td>
+    </tr>
+    <tr>
+        <td><a href="https://github.com/WebKit/WebKit/releases/tag/releases/Apple/Safari-16.4-iOS-16.4.1">releases/Apple/Safari-16.4-iOS-16.4.1</a></td>
         <td>16.4.1</td>
         <td rowspan="3">14.3.1</td>
         <td rowspan="3">16.4</td>
+        <td rowspan="3">webkit_iOS_16.4.1-worktree-20260411-143740.patch</td>
     </tr>
     <tr>
-        <td rowspan="2">releases/Apple/Safari-16.5-iOS-16.5</td>
+        <td rowspan="2"><a href="https://github.com/WebKit/WebKit/releases/tag/releases/Apple/Safari-16.5-iOS-16.5">releases/Apple/Safari-16.5-iOS-16.5</a></td>
         <td>16.5</td>
     </tr>
     <tr>
@@ -51,6 +70,18 @@ Tools/Scripts/build-webkit --ios-device --release --use-ccache WK_USE_CCACHE=YES
 4. Push compiled frameworks to `/Library/Frameworks` or `$JBROOT/Library/Frameworks` (RootHide).
 
 ## Troubleshooting
+
+### iOS 16.1 required cherry-picks
+
+When building `releases/Apple/Safari-16.1-iOS-16.1` for iOS device, apply these 4 commits first:
+
+```bash
+git cherry-pick --no-gpg-sign \
+21349d858b6b54828590716f8f49258f9c0082c2 \
+60cfd7b1e09680290d6362d8da00cfaa70d9a1df \
+b594a5e7e91af46d749e022b06512d753472d324 \
+d09b8b302cad75835420d928cfc17f6c585f3c8c
+```
 
 ### Patch Xcode SDK
 

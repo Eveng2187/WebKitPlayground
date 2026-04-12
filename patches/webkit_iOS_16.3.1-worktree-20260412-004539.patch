@@ -148,24 +148,6 @@ index c03c339309fd..2f71c78d557b 100644
  namespace JSC {
  
  #if PLATFORM(COCOA)
-diff --git a/Source/JavaScriptCore/runtime/JSGlobalObject.h b/Source/JavaScriptCore/runtime/JSGlobalObject.h
-index 6d0dcd46e3ce..dee6dc5f58c4 100644
---- a/Source/JavaScriptCore/runtime/JSGlobalObject.h
-+++ b/Source/JavaScriptCore/runtime/JSGlobalObject.h
-@@ -57,7 +57,13 @@
- #if USE(APPLE_INTERNAL_SDK)
- #include <WebKitAdditions/JSGlobalObjectAdditions.h>
- #else
-+// Keep JSGlobalObject instance layout compatible with stock iOS JavaScriptCore
-+// when mixing custom WebCore/WebKit with system JavaScriptCore at runtime.
-+#if PLATFORM(IOS_FAMILY)
-+#define JS_GLOBAL_OBJECT_ADDITIONS_1 void* m_externalSDKABICompatPadding { nullptr }
-+#else
- #define JS_GLOBAL_OBJECT_ADDITIONS_1
-+#endif
- #define JS_GLOBAL_OBJECT_ADDITIONS_2
- #define JS_GLOBAL_OBJECT_ADDITIONS_3
- #define JS_GLOBAL_OBJECT_ADDITIONS_4
 diff --git a/Source/ThirdParty/libwebrtc/Configurations/Base.xcconfig b/Source/ThirdParty/libwebrtc/Configurations/Base.xcconfig
 index 961d6b6cb485..77a83e724c94 100644
 --- a/Source/ThirdParty/libwebrtc/Configurations/Base.xcconfig
@@ -198,10 +180,9 @@ index 2f2c3ae0528b..4b3a3d86f471 100644
  ANGLE_HEADER_SEARCH_PATHS = $(BUILT_PRODUCTS_DIR)$(WK_ALTERNATE_FRAMEWORKS_DIR)$(WK_LIBRARY_HEADERS_FOLDER_PATH)/ $(SDKROOT)$(WK_ALTERNATE_WEBKIT_SDK_PATH)$(WK_LIBRARY_HEADERS_FOLDER_PATH)/;
  LIBWEBRTC_HEADER_SEARCH_PATHS = $(BUILT_PRODUCTS_DIR)$(WK_LIBRARY_HEADERS_FOLDER_PATH)/webrtc $(SDKROOT)$(WK_LIBRARY_HEADERS_FOLDER_PATH)/webrtc $(BUILT_PRODUCTS_DIR)$(WK_LIBRARY_HEADERS_FOLDER_PATH)/webrtc/sdk/objc/Framework/Headers $(SDKROOT)$(WK_LIBRARY_HEADERS_FOLDER_PATH)/webrtc/sdk/objc/Framework/Headers;
  
--HEADER_SEARCH_PATHS = PAL ForwardingHeaders /usr/include/libxslt /usr/include/libxml2 "$(BUILT_PRODUCTS_DIR)/DerivedSources/WebCore" "$(BUILT_PRODUCTS_DIR)$(WK_LIBRARY_HEADERS_FOLDER_PATH)" $(WEBKITADDITIONS_HEADER_SEARCH_PATHS) $(ANGLE_HEADER_SEARCH_PATHS) $(LIBWEBRTC_HEADER_SEARCH_PATHS) $(HEADER_SEARCH_PATHS) $(SRCROOT);
+ HEADER_SEARCH_PATHS = PAL ForwardingHeaders /usr/include/libxslt /usr/include/libxml2 "$(BUILT_PRODUCTS_DIR)/DerivedSources/WebCore" "$(BUILT_PRODUCTS_DIR)$(WK_LIBRARY_HEADERS_FOLDER_PATH)" $(WEBKITADDITIONS_HEADER_SEARCH_PATHS) $(ANGLE_HEADER_SEARCH_PATHS) $(LIBWEBRTC_HEADER_SEARCH_PATHS) $(HEADER_SEARCH_PATHS) $(SRCROOT);
 -SYSTEM_HEADER_SEARCH_PATHS = $(SDK_DIR)$(WK_ALTERNATE_WEBKIT_SDK_PATH)$(WK_LIBRARY_HEADERS_FOLDER_PATH) $(inherited);
 -LIBRARY_SEARCH_PATHS = $(SDK_DIR)$(WK_LIBRARY_INSTALL_PATH) $(inherited);
-+HEADER_SEARCH_PATHS = $(SRCROOT)/../../../scripts/abi-shims/include PAL ForwardingHeaders /usr/include/libxslt /usr/include/libxml2 "$(BUILT_PRODUCTS_DIR)/DerivedSources/WebCore" "$(BUILT_PRODUCTS_DIR)$(WK_LIBRARY_HEADERS_FOLDER_PATH)" $(WEBKITADDITIONS_HEADER_SEARCH_PATHS) $(ANGLE_HEADER_SEARCH_PATHS) $(LIBWEBRTC_HEADER_SEARCH_PATHS) $(HEADER_SEARCH_PATHS) $(SRCROOT);
 +SYSTEM_HEADER_SEARCH_PATHS = $(PROJECT_DIR)/PAL/ThirdParty/libavif/include $(SDK_DIR)$(WK_ALTERNATE_WEBKIT_SDK_PATH)$(WK_LIBRARY_HEADERS_FOLDER_PATH) $(inherited);
 +LIBRARY_SEARCH_PATHS = "$(SDK_DIR)$(WEBCORE_LIBRARY_DIR)" $(SDK_DIR)$(WK_LIBRARY_INSTALL_PATH) $(inherited);
  
