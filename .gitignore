@@ -1,11 +1,9 @@
 /WebKit
 /WebKit-*
 /WebKit_*
-/WebKitPlayer-*
-/payload
 /samples
 /packages
-/third_party
+/worktrees
 
 # Created by https://www.toptal.com/developers/gitignore/api/macos,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,python

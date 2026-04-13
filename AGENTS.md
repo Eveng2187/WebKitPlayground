@@ -1,4 +1,4 @@
-# WebKit iOS 构建提示词（会话沉淀）
+# WebKit iOS 构建提示词
 
 以下内容用于后续在本机继续构建/调试 WebKit 时直接复用。
 
@@ -43,26 +43,10 @@ Tools/Scripts/build-webkit --ios-simulator --release --use-ccache WK_USE_CCACHE=
 Tools/Scripts/build-webkit --ios-device --release --use-ccache \
 WK_USE_CCACHE=YES \
 ARCHS='arm64 arm64e' \
+ONLY_ACTIVE_ARCH=NO \
 GCC_TREAT_WARNINGS_AS_ERRORS=NO \
-OTHER_CFLAGS='$(inherited) -Wno-error -Wno-error=strict-prototypes -Wno-strict-prototypes -Wno-error=deprecated-declarations' \
-OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-error -Wno-error=deprecated-declarations'
-```
-
-## 公开 SDK 对齐固件特性（两层强制开启）
-
-当使用公开 iPhoneOS SDK 且需要尽量逼近固件内 WebKit 特性时，建议同时做两层：
-
-1. `build-webkit` feature 参数层：`--jit --dfg-jit --ftl-jit`
-2. 编译器预处理层：在 `OTHER_CFLAGS` / `OTHER_CPLUSPLUSFLAGS` 显式追加 `-D` 宏，避免仅靠 build setting 传递导致条件编译未生效。
-
-推荐命令（iOS Device / Release）：
-
-```bash
-Tools/Scripts/build-webkit --ios-device --release --use-ccache --jit --dfg-jit --ftl-jit \
-WK_USE_CCACHE=YES ARCHS='arm64 arm64e' \
-GCC_TREAT_WARNINGS_AS_ERRORS=NO \
-OTHER_CFLAGS='$(inherited) -Wno-error -Wno-error=strict-prototypes -Wno-strict-prototypes -Wno-error=deprecated-declarations -DENABLE_JIT_OPERATION_VALIDATION=1 -DENABLE_JIT_OPERATION_DISASSEMBLY=1' \
-OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-error -Wno-error=deprecated-declarations -DENABLE_JIT_OPERATION_VALIDATION=1 -DENABLE_JIT_OPERATION_DISASSEMBLY=1'
+OTHER_CFLAGS='$(inherited) -Wno-error' \
+OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-error'
 ```
 
 ## 关于 `--only-webkit`（强约束）
@@ -70,24 +54,6 @@ OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-error -Wno-error=deprecated-declarations
 - `--only-webkit` 不应使用。
 - 该参数具备迷惑性，容易破坏依赖顺序并触发不完整产物问题（例如统一源生成依赖未铺好）。
 - 结论：任何情况都不应考虑 `--only-webkit`。
-
-## 忽略警告相关环境变量
-
-```bash
-GCC_TREAT_WARNINGS_AS_ERRORS=NO
-OTHER_CFLAGS='$(inherited) -Wno-error -Wno-error=strict-prototypes -Wno-strict-prototypes -Wno-error=deprecated-declarations'
-OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-error -Wno-error=deprecated-declarations'
-```
-
-## 推荐的完整命令（含忽略警告）
-
-```bash
-Tools/Scripts/build-webkit --ios-simulator --release --use-ccache \
-WK_USE_CCACHE=YES \
-GCC_TREAT_WARNINGS_AS_ERRORS=NO \
-OTHER_CFLAGS='$(inherited) -Wno-error -Wno-error=strict-prototypes -Wno-strict-prototypes -Wno-error=deprecated-declarations' \
-OTHER_CPLUSPLUSFLAGS='$(inherited) -Wno-error -Wno-error=deprecated-declarations'
-```
 
 ## 备注
 
